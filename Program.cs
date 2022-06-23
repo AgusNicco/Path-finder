@@ -7,14 +7,21 @@ class Program
     public static string MapFile = "map.txt";
     public static char Wall = '#';
     public static char Path = ' ';
+    //public List<Direction> PathToTarget = new List<Direction>();
+    public static int IndexOfPath;
+
+
 
     class Maze
     {
         public static List<char[]> Map = new List<char[]> { };
+        public List<char[]> OriginalMap = new List<char[]> { };
         private static Point CurrentLocation;
         public static List<Node> ListOfNodes = new List<Node> { };
         public static Node LastNode;
         public static bool WasPathFound = false;
+
+        public static List<Direction> PathToTarget = new List<Direction> { };
 
         public Maze(string mapfile)
         {
@@ -26,6 +33,7 @@ class Program
             {
                 Map.Add(s.ToCharArray());
             }
+            OriginalMap = Map;
 
             for (int i = 0; i < Map.Count(); i++)
             {
@@ -34,20 +42,21 @@ class Program
                     if (Map[i][j] == TargetSkin) Target = new Point(j, i);
                 }
             }
-            Console.WriteLine($"{Target.x}, {Target.y}");
+            //Console.WriteLine($"{Target.x}, {Target.y}");
 
-            LastNode = new Node(1, 1);
+            LastNode = new Node(1, 1, new List<Direction>{});
             ListOfNodes.Add(LastNode);
         }
 
         public static bool IsAtNode = true;
         public static Direction PreviousDirection;
-
+        public static bool FirstMove = true;
         public static void Explore()
         {
-            PreviousDirection = ListOfNodes[0].WillMoveTo;
+            if (FirstMove) { PreviousDirection = ListOfNodes[0].WillMoveTo; FirstMove = false; }
             List<Direction> Possibilities = RemoveDirection(GetPossibleDirections(CurrentLocation), InverseOfDirection(PreviousDirection));
             int NumberOfPossibleDirections = Possibilities.Count();
+            //ListOfNodes[0].PathToNode = new List<Direction> { };
 
             Map[CurrentLocation.y][CurrentLocation.x] = Wall;
 
@@ -57,11 +66,12 @@ class Program
 
                 int index = FindIndexOFBestNode();
 
-                CurrentLocation = new Point(ListOfNodes[index].Location.x, ListOfNodes[index].Location.y); 
+                CurrentLocation = new Point(ListOfNodes[index].Location.x, ListOfNodes[index].Location.y);
+                PathToTarget = ListOfNodes[index].PathToNode;
+
                 IsAtNode = true;
 
                 PreviousDirection = Direction.None;
-
                 ListOfNodes[index].Visits += 1;
 
                 //if (ListOfNodes[index].Visits > 20) KillNode(ListOfNodes[index]);
@@ -78,6 +88,7 @@ class Program
 
                 PreviousDirection = BestDirection(CurrentLocation, Possibilities);
                 MoveTo(PreviousDirection);
+                PathToTarget.Add(PreviousDirection);
 
                 IsAtNode = false;
 
@@ -86,11 +97,14 @@ class Program
 
             if (NumberOfPossibleDirections > 1 && !IsAtNode)
             {
-                ListOfNodes.Add(new Node(CurrentLocation.x, CurrentLocation.y));
-                LastNode = ListOfNodes[ListOfNodes.Count() - 1];
+                Map[CurrentLocation.y][CurrentLocation.x] = Wall;
 
+                //ListOfNodes.Add(new Node(CurrentLocation.x, CurrentLocation.y));
                 PreviousDirection = BestDirection(CurrentLocation, Possibilities);
+                PathToTarget.Add(PreviousDirection);
                 MoveTo(PreviousDirection);
+
+                LastNode = ListOfNodes[ListOfNodes.Count() - 1];
 
                 Debug.Assert(Map[CurrentLocation.y][CurrentLocation.x] != Wall);
 
@@ -101,6 +115,7 @@ class Program
             {
                 PreviousDirection = BestDirection(CurrentLocation, Possibilities);
                 MoveTo(PreviousDirection);
+                PathToTarget.Add(PreviousDirection);
                 IsAtNode = false;
 
                 Debug.Assert(Map[CurrentLocation.y][CurrentLocation.x] != Wall);
@@ -146,7 +161,8 @@ class Program
                 else
                 {
                     CurrentBest -= 1;
-                    if(CurrentBest < 0) { 
+                    if (CurrentBest < 0)
+                    {
                         //AddNodes();
                         // CurrentBest = ListOfNodes.Count() -1 ;
                     }
@@ -192,7 +208,6 @@ class Program
                         break;
                     }
             }
-
         }
 
         public static Direction InverseOfDirection(Direction x)
@@ -225,12 +240,197 @@ class Program
                     {
                         if (GetPossibleDirections(new Point(j, i)).Count() > 1)
                         {
-                            ListOfNodes.Add(new Node(j, i));
+                            ListOfNodes.Add(new Node(j, i, new List<Direction>{}));
                             break;
                         }
                     }
                 }
             }
+        }
+
+        public static void PrintInfoInPathToTarget()
+        {
+            Console.Clear();
+            int i = 1;
+            foreach (Direction d in GetPathToTarget())
+            {
+                switch (d)
+                {
+                    case Direction.North:
+                        {
+                            Console.WriteLine(i + ": Move to North");
+                            i++; break;
+                        }
+                    case Direction.South:
+                        {
+                            Console.WriteLine(i + ": Move to South");
+                            i++; break;
+                        }
+                    case Direction.West:
+                        {
+                            Console.WriteLine(i + ": Move to West");
+                            i++; break;
+                        }
+                    case Direction.East:
+                        {
+                            Console.WriteLine(i + ": Move to East");
+                            i++; break;
+                        }
+                }
+            }
+        }
+        public static int CurrentCursorX = 1;
+        public static int CurrentCursorY = 1;
+
+        public static void PrintPathToTarget()
+        {
+            //Console.Clear();
+            //PrintMap();
+            Console.CursorTop = CurrentCursorY;
+            Console.CursorLeft = CurrentCursorX;
+            Console.ForegroundColor = ConsoleColor.Green;
+            Console.Write('O');
+            Console.CursorTop = CurrentCursorY;
+            Console.CursorLeft = CurrentCursorX;
+            
+            foreach (Direction d in GetPathToTarget())
+            {
+                Thread.Sleep(20);
+                MoverCursorTo(d);
+                Console.Write('O');
+                Console.CursorTop = CurrentCursorY;
+                Console.CursorLeft = CurrentCursorX;
+            }
+        }
+
+        public static void MoverCursorTo(Direction d)
+        {
+            switch (d)
+            {
+                case Direction.North:
+                    {
+                        CurrentCursorY -= 1;
+                        Console.CursorTop = CurrentCursorY;
+                        break;
+                    }
+                case Direction.South:
+                    {
+                        CurrentCursorY += 1;
+                        Console.CursorTop = CurrentCursorY;
+                        break;
+                    }
+                case Direction.West:
+                    {
+                        CurrentCursorX -= 1;
+                        Console.CursorLeft = CurrentCursorX;
+                        break;
+                    }
+                case Direction.East:
+                    {
+                        CurrentCursorX += 1;
+                        Console.CursorLeft = CurrentCursorX;
+                        break;
+                    }
+            }
+
+        }
+
+        public static List<Direction> GetPathToTarget()
+        {
+            List<Direction> output = new List<Direction> { };
+            List<Node> list = Maze.ListOfNodes;
+            int ite = 0;
+            while(ite < 37000 && !WasPathFound)
+            {
+                ite++;
+                if (FirstMove) { PreviousDirection = ListOfNodes[0].WillMoveTo; FirstMove = false; }
+                List<Direction> Possibilities = RemoveDirection(GetPossibleDirections(CurrentLocation), InverseOfDirection(PreviousDirection));
+                int NumberOfPossibleDirections = Possibilities.Count();
+                //ListOfNodes[0].PathToNode = new List<Direction> { };
+
+                Map[CurrentLocation.y][CurrentLocation.x] = Wall;
+
+                if (NumberOfPossibleDirections == 0)
+                {
+                    Map[CurrentLocation.y][CurrentLocation.x] = Wall; //  KillShouldBeDeadNodes();
+
+                    int index = FindIndexOFBestNode();
+
+                    CurrentLocation = new Point(ListOfNodes[index].Location.x, ListOfNodes[index].Location.y);
+                    
+                    output = new List<Direction> {};
+
+                    foreach (Direction d in ListOfNodes[index].PathToNode)
+                    {
+                        output.Add(d);
+                    }
+
+                    IsAtNode = true;
+
+                    PreviousDirection = Direction.None;
+                    ListOfNodes[index].Visits += 1;
+                    
+
+                    //if (ListOfNodes[index].Visits > 20) KillNode(ListOfNodes[index]);
+
+                    if (ListOfNodes[index].Location.x == LastNode.Location.x && ListOfNodes[index].Location.y == LastNode.Location.y) KillNode(LastNode);
+                }
+
+                if (NumberOfPossibleDirections == 1)
+                {
+                    Map[CurrentLocation.y][CurrentLocation.x] = Wall; // KillShouldBeDeadNodes();
+
+
+                    //if (IsAtNode) KillNode(LastNode);
+
+                    PreviousDirection = BestDirection(CurrentLocation, Possibilities);
+                    MoveTo(PreviousDirection);
+                    output.Add(PreviousDirection);
+
+                    IsAtNode = false;
+
+                    Debug.Assert(Map[CurrentLocation.y][CurrentLocation.x] != Wall);
+                }
+
+                if (NumberOfPossibleDirections > 1 && !IsAtNode)
+                {
+                    Map[CurrentLocation.y][CurrentLocation.x] = Wall;
+                    
+                    ListOfNodes.Add(new Node(CurrentLocation.x, CurrentLocation.y, output));
+                
+                    //ListOfNodes[ListOfNodes.Count()-1].PathToNode = output;
+
+                    PreviousDirection = BestDirection(CurrentLocation, Possibilities);
+                    MoveTo(PreviousDirection);
+                    output.Add(PreviousDirection);
+
+                    LastNode = ListOfNodes[ListOfNodes.Count() - 1];
+
+                    Debug.Assert(Map[CurrentLocation.y][CurrentLocation.x] != Wall);
+
+                    IsAtNode = false;
+                }
+
+                if (NumberOfPossibleDirections > 1 && IsAtNode)
+                {
+                    PreviousDirection = BestDirection(CurrentLocation, Possibilities);
+                    MoveTo(PreviousDirection);
+                    output.Add(PreviousDirection);
+                    IsAtNode = false;
+
+                    Debug.Assert(Map[CurrentLocation.y][CurrentLocation.x] != Wall);
+                }
+
+                if (Map[CurrentLocation.y][CurrentLocation.x] == TargetSkin)
+                {
+                    WasPathFound = true;
+                }
+
+                KillShouldBeDeadNodes();
+                //WrieTrack();
+            }
+            //Debug.Assert(false);
+            return output;
         }
     }
 
@@ -248,24 +448,34 @@ class Program
         public readonly Direction WillMoveTo;
         public int Visits;
 
-        public Node(int x, int y)
+        public readonly List<Direction> PathToNode;
+
+
+        private static int it = 0;
+        public Node(int x, int y, List<Direction> _PathToNode)
         {
             Visits = 1;
             IsAlive = true;
             Location = new Point(x, y);
             PossibleDirections = GetPossibleDirections(Location);
 
-            // if (Maze.Map[y - 1][x] == Wall) PossibleDirections = RemoveDirection(PossibleDirections, Direction.North);
-            // if (Maze.Map[y + 1][x] == Wall) PossibleDirections = RemoveDirection(PossibleDirections, Direction.South);
-            // if (Maze.Map[y][x - 1] == Wall) PossibleDirections = RemoveDirection(PossibleDirections, Direction.West);
-            // if (Maze.Map[y][x + 1] == Wall) PossibleDirections = RemoveDirection(PossibleDirections, Direction.East);
-
             if (PossibleDirections.Count() < 1) IsAlive = false;
 
             DistanceToTarget = DistanceBetween(Location, Target);
             WillMoveTo = BestDirection(Location, PossibleDirections);
+
+            PathToNode = new List<Direction>{};
+            foreach (Direction d in _PathToNode)
+            {
+                PathToNode.Add(d);
+            }
+
+            //PathToNode =  _PathToNode;
+            //Debug.Assert(it < 6);
+            it++;
         }
     }
+
 
     // requires testing
     public static Direction BestDirection(Point Location, List<Direction> Possibilities)
@@ -354,19 +564,25 @@ class Program
         Console.Clear();
         TestDistanceBetween();
         Maze maze = new Maze("map.txt");
+
         PrintMap();
         //Thread.Sleep(2000);
 
         // while(!Maze.WasPathFound)
         // {
-        for (int i = 0; !Maze.WasPathFound; i++)
-        {
-            Maze.Explore();
-            //PrintMap();
-            //Console.WriteLine(i);
-            Thread.Sleep(20);
-        }
+        // for (int i = 0; i < 0 && !Maze.WasPathFound; i++)
+        // {
+        //     x = Maze.GetPathToTarget();
+        //     //PrintMap();
+        //     //Console.WriteLine(i);
+        //     Thread.Sleep(20);
         // }
+        Maze.PrintPathToTarget();
+        Debug.Assert(false);
+        
+        //Maze.PrintInfoInPathToTarget();
+        // }
+        
         Console.CursorTop = Maze.Map.Count();
 
 
