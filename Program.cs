@@ -9,6 +9,7 @@ class Program
     public static char Path = ' ';
     //public List<Direction> PathToTarget = new List<Direction>();
     public static int IndexOfPath;
+    public static int Delay = 0;
 
 
 
@@ -127,7 +128,7 @@ class Program
             }
 
             KillShouldBeDeadNodes();
-            WrieTrack();
+            PrintTrack();
         }
 
         public static void KillNode(Node x)
@@ -189,22 +190,22 @@ class Program
             {
                 case Direction.North:
                     {
-                        CurrentLocation = new Point(CurrentLocation.x, CurrentLocation.y - 1); // WrieTrack();
+                        CurrentLocation = new Point(CurrentLocation.x, CurrentLocation.y - 1); 
                         break;
                     }
                 case Direction.South:
                     {
-                        CurrentLocation = new Point(CurrentLocation.x, CurrentLocation.y + 1); // WrieTrack();
+                        CurrentLocation = new Point(CurrentLocation.x, CurrentLocation.y + 1); 
                         break;
                     }
                 case Direction.West:
                     {
-                        CurrentLocation = new Point(CurrentLocation.x - 1, CurrentLocation.y); // WrieTrack();
+                        CurrentLocation = new Point(CurrentLocation.x - 1, CurrentLocation.y); 
                         break;
                     }
                 case Direction.East:
                     {
-                        CurrentLocation = new Point(CurrentLocation.x + 1, CurrentLocation.y); // WrieTrack();
+                        CurrentLocation = new Point(CurrentLocation.x + 1, CurrentLocation.y); 
                         break;
                     }
             }
@@ -222,12 +223,13 @@ class Program
             return Direction.None;
         }
 
-        public static void WrieTrack()
+        public static void PrintTrack()
         {
-            Console.ForegroundColor = ConsoleColor.Green;
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Console.CursorTop = CurrentLocation.y;
             Console.CursorLeft = CurrentLocation.x;
             Console.Write("O");
+            Thread.Sleep(Delay);
         }
 
         public static void AddNodes()
@@ -295,7 +297,8 @@ class Program
             
             foreach (Direction d in GetPathToTarget())
             {
-                Thread.Sleep(20);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Thread.Sleep(Delay);
                 MoverCursorTo(d);
                 Console.Write('O');
                 Console.CursorTop = CurrentCursorY;
@@ -340,9 +343,8 @@ class Program
             List<Direction> output = new List<Direction> { };
             List<Node> list = Maze.ListOfNodes;
             int ite = 0;
-            while(ite < 37000 && !WasPathFound)
+            while(!WasPathFound)
             {
-                ite++;
                 if (FirstMove) { PreviousDirection = ListOfNodes[0].WillMoveTo; FirstMove = false; }
                 List<Direction> Possibilities = RemoveDirection(GetPossibleDirections(CurrentLocation), InverseOfDirection(PreviousDirection));
                 int NumberOfPossibleDirections = Possibilities.Count();
@@ -427,9 +429,9 @@ class Program
                 }
 
                 KillShouldBeDeadNodes();
-                //WrieTrack();
+                PrintTrack();
             }
-            //Debug.Assert(false);
+            // Debug.Assert(false);
             return output;
         }
     }
@@ -564,9 +566,9 @@ class Program
         Console.Clear();
         TestDistanceBetween();
         Maze maze = new Maze("map.txt");
-
+        Delay = 0;
         PrintMap();
-        //Thread.Sleep(2000);
+        //Thread.Sleep(Delay00);
 
         // while(!Maze.WasPathFound)
         // {
@@ -575,10 +577,10 @@ class Program
         //     x = Maze.GetPathToTarget();
         //     //PrintMap();
         //     //Console.WriteLine(i);
-        //     Thread.Sleep(20);
+        //     Thread.Sleep(Delay);
         // }
         Maze.PrintPathToTarget();
-        Debug.Assert(false);
+        // Debug.Assert(false);
         
         //Maze.PrintInfoInPathToTarget();
         // }
