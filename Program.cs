@@ -8,6 +8,8 @@ class Program
     public static char Wall = '#';
     public static char StartSkin = 'x';
     public static int Delay = 0;
+    public static Stopwatch timer = new Stopwatch();
+    public static bool ShouldPrint = true;
 
 
 
@@ -212,8 +214,6 @@ class Program
 
         public static void PrintPathToTarget()
         {
-            //Console.Clear();
-            //PrintMap();
             CurrentCursorX = StartingPoint.x;
             CurrentCursorY = StartingPoint.y;
             Console.CursorTop = CurrentCursorY;
@@ -272,6 +272,7 @@ class Program
         {
             List<Direction> output = new List<Direction> { };
 
+            timer.Start();
             while(!WasPathFound)
             {
 
@@ -358,9 +359,10 @@ class Program
                 }
 
                 //KillShouldBeDeadNodes();
-                //PrintTrack();
+                if (ShouldPrint) PrintTrack();
             }
             // Debug.Assert(false);
+            timer.Stop();
             return output;
         }
     }
@@ -497,26 +499,16 @@ class Program
         Maze maze = new Maze("map.txt");
         Delay = 0;
         PrintMap();
-        //Thread.Sleep(Delay00);
 
-        // while(!Maze.WasPathFound)
-        // {
-        // for (int i = 0; i < 0 && !Maze.WasPathFound; i++)
-        // {
-        //     x = Maze.GetPathToTarget();
-        //     //PrintMap();
-        //     //Console.WriteLine(i);
-        //     Thread.Sleep(Delay);
-        // }
+        ShouldPrint = false;
+
         Maze.PrintPathToTarget();
-        // Debug.Assert(false);
-        
-        //Maze.PrintInfoInPathToTarget();
-        // }
+ 
         
         Console.CursorTop = Maze.Map.Count();
+        Console.CursorLeft = 0;
 
 
-        Console.WriteLine("Path found!");
+        Console.WriteLine($"Path found in {timer.Elapsed}!");
     }
 }
